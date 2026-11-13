@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>Haven — Wayfair AI Life-Stage Home Transition Planner</title>
+  <style>
+    :root {
+      --purple: #7B2D8E;
+      --purple-dark: #5C1F6A;
+      --purple-light: #9B4DB0;
+      --teal: #00B4D8;
+      --bg: #F7F5F9;
+      --surface: #FFFFFF;
+      --text: #1A1A2E;
+      --text-light: #6B6B80;
+      --user-bubble: #7B2D8E;
+      --user-text: #FFFFFF;
+      --haven-bubble: #FFFFFF;
+      --haven-text: #1A1A2E;
+      --border: #E8E4EC;
+      --shadow: 0 2px 12px rgba(123, 45, 142, 0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 16px rgba(123, 45, 142, 0.2);
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .header-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .header-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .header-text p {
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    .header-spacer {
+      flex: 1;
+    }
+
+    .new-chat-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.6);
+      color: white;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .new-chat-btn:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.9);
+    }
+
+    /* Chat area */
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      display: flex;
+      gap: 10px;
+      max-width: 85%;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.haven { align-self: flex-start; }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .message.haven .avatar {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--purple-light) 100%);
+      color: white;
+    }
+
+    .message.user .avatar {
+      background: var(--teal);
+      color: white;
+    }
+
+    .bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      line-height: 1.55;
+      font-size: 14.5px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .message.haven .bubble {
+      background: var(--haven-bubble);
+      color: var(--haven-text);
+      border-bottom-left-radius: 4px;
+      box-shadow: var(--shadow);
+    }
+
+    .message.user .bubble {
+      background: var(--user-bubble);
+      color: var(--user-text);
+      border-bottom-right-radius: 4px;
+    }
+
+    .bubble strong { font-weight: 600; }
+    .bubble em { font-style: italic; }
+
+    /* Typing indicator */
+    .typing {
+      display: flex;
+      gap: 5px;
+      padding: 8px 4px;
+      align-items: center;
+    }
+
+    .typing span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--purple-light);
+      animation: bounce 1.4s infinite;
+    }
+
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    /* Input area */
+    .input-area {
+      padding: 12px 16px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .input-row textarea {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 14.5px;
+      line-height: 1.4;
+      resize: none;
+      outline: none;
+      max-height: 120px;
+      transition: border-color 0.2s;
+      background: var(--bg);
+    }
+
+    .input-row textarea:focus {
+      border-color: var(--purple);
+    }
+
+    .input-row textarea::placeholder {
+      color: var(--text-light);
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 12px;
+      background: var(--purple);
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.1s;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover { background: var(--purple-dark); }
+    .send-btn:active { transform: scale(0.95); }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 8px 16px 12px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      font-size: 11px;
+      color: var(--text-light);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .footer a {
+      color: var(--purple);
+      text-decoration: none;
+    }
+
+    /* Responsive */
+    @media (min-width: 768px) {
+      .chat-container { padding: 24px 10%; }
+      .message { max-width: 70%; }
+    }
+
+    @media (max-width: 600px) {
+      .new-chat-btn span { display: none; }
+      .new-chat-btn::after { content: "↻"; font-size: 16px; }
+      .new-chat-btn { padding: 6px 10px; }
+    }
+
+    /* Markdown-like formatting in bubbles */
+    .bubble h3 {
+      font-size: 14.5px;
+      font-weight: 700;
+      margin: 12px 0 4px 0;
+    }
+
+    .bubble h3:first-child { margin-top: 0; }
+
+    .bubble ul, .bubble ol {
+      margin: 6px 0;
+      padding-left: 20px;
+    }
+
+    .bubble li { margin: 3px 0; }
+
+    .bubble code {
+      background: rgba(123, 45, 142, 0.08);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .bubble blockquote {
+      border-left: 3px solid var(--purple);
+      padding-left: 12px;
+      margin: 8px 0;
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    .bubble table {
+      border-collapse: collapse;
+      margin: 8px 0;
+      font-size: 13px;
+      width: 100%;
+    }
+
+    .bubble th, .bubble td {
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      text-align: left;
+    }
+
+    .bubble th {
+      background: rgba(123, 45, 142, 0.06);
+      font-weight: 600;
+    }
+
+    .suggested-questions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .suggested-q {
+      padding: 8px 14px;
+      background: rgba(123, 45, 142, 0.06);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--purple);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .suggested-q:hover {
+      background: rgba(123, 45, 142, 0.12);
+      border-color: var(--purple-light);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-icon">🏠</div>
+    <div class="header-text">
+      <h1>Haven</h1>
+      <p>Wayfair AI Life-Stage Home Transition Planner</p>
+    </div>
+    <div class="header-spacer"></div>
+    <button class="new-chat-btn" id="resetBtn" title="Start a new conversation"><span>New chat</span></button>
+  </div>
+
+  <div class="chat-container" id="chat"></div>
+
+  <div class="input-area">
+    <div class="input-row">
+      <textarea
+        id="input"
+        rows="1"
+        placeholder="Ask Haven about the Life-Stage Home Transition Planner..."
+        onkeydown="handleKey(event)"
+        aria-label="Message Haven"
+      ></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()" aria-label="Send">➤</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    MBA 8125 Digital Innovation · Georgia State University · Team 2 (Wayfair) · Class Project Demo<br>
+    Not affiliated with or endorsed by Wayfair · AI responses may be inaccurate
+  </div>
+
+  <script>
+    const chat = document.getElementById("chat");
+    const input = document.getElementById("input");
+    const sendBtn = document.getElementById("sendBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let conversationHistory = [];
+    let isStreaming = false;
+
+    // Auto-resize textarea
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 120) + "px";
+    });
+
+    function handleKey(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }
+
+    // Simple markdown → HTML
+    function renderMarkdown(text) {
+      let html = text;
+      // Bold
+      html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      // Italic
+      html = html.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, "<em>$1</em>");
+      // Inline code
+      html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+      // Headers (### only within responses)
+      html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+      // Blockquotes
+      html = html.replace(/^> (.+)$/gm, "<blockquote>$1</blockquote>");
+      // Unordered lists
+      html = html.replace(/^- (.+)$/gm, "<li>$1</li>");
+      html = html.replace(/(<li>.*<\/li>\n?)+/g, (m) => "<ul>" + m + "</ul>");
+      // Numbered lists
+      html = html.replace(/^\d+\. (.+)$/gm, "<li>$1</li>");
+      // Line breaks
+      html = html.replace(/\n\n/g, "<br><br>");
+      html = html.replace(/\n/g, "<br>");
+      // Clean up double <br> inside lists
+      html = html.replace(/<\/li><br>/g, "</li>");
+      html = html.replace(/<\/ul><br>/g, "</ul>");
+      return html;
+    }
+
+    function addMessage(role, content, isHtml = false) {
+      const wrapper = document.createElement("div");
+      wrapper.className = `message ${role}`;
+
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = role === "haven" ? "H" : "Y";
+
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      if (isHtml) {
+        bubble.innerHTML = content;
+      } else {
+        bubble.innerHTML = renderMarkdown(content);
+      }
+
+      wrapper.appendChild(avatar);
+      wrapper.appendChild(bubble);
+      chat.appendChild(wrapper);
+      chat.scrollTop = chat.scrollHeight;
+
+      return bubble;
+    }
+
+    function showTyping() {
+      const wrapper = document.createElement("div");
+      wrapper.className = "message haven";
+      wrapper.id = "typing-indicator";
+
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = "H";
+
+      const typing = document.createElement("div");
+      typing.className = "typing";
+      typing.innerHTML = "<span></span><span></span><span></span>";
+
+      wrapper.appendChild(avatar);
+      wrapper.appendChild(typing);
+      chat.appendChild(wrapper);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function hideTyping() {
+      const el = document.getElementById("typing-indicator");
+      if (el) el.remove();
+    }
+
+    function showWelcome() {
+      const welcomeHtml = `
+        <strong>Welcome — I'm Haven.</strong><br><br>
+        I'm Wayfair's AI Life-Stage Home Transition Planner Sales & Marketing Specialist. I'm here to explain, demonstrate, and make the case for Wayfair's most strategically significant product concept: an AI-powered planning companion that transforms Wayfair from an isolated-SKU marketplace into a <strong>life-event relationship platform</strong>.<br><br>
+        I can walk you through the market opportunity, competitive landscape, technical architecture, financial impact, customer scenarios, and strategic rationale — all grounded in specific data and evidence.<br><br>
+        What would you like to explore?
+        <div class="suggested-questions">
+          <div class="suggested-q" onclick="askSuggested(this)">What is the Life-Stage Home Transition Planner?</div>
+          <div class="suggested-q" onclick="askSuggested(this)">Walk me through a customer scenario</div>
+          <div class="suggested-q" onclick="askSuggested(this)">How does Haven compare to competitors?</div>
+          <div class="suggested-q" onclick="askSuggested(this)">What's the business case?</div>
+        </div>
+      `;
+      addMessage("haven", welcomeHtml, true);
+    }
+
+    // New chat — reset conversation
+    resetBtn.addEventListener("click", () => {
+      if (isStreaming) return;
+      conversationHistory = [];
+      chat.innerHTML = "";
+      showWelcome();
+      input.focus();
+    });
+
+    async function sendMessage() {
+      const text = input.value.trim();
+      if (!text || isStreaming) return;
+
+      // Add user message to UI
+      addMessage("user", text);
+      conversationHistory.push({ role: "user", content: text });
+
+      input.value = "";
+      input.style.height = "auto";
+      isStreaming = true;
+      sendBtn.disabled = true;
+
+      // Remove suggested questions
+      const sq = document.querySelector(".suggested-questions");
+      if (sq) sq.remove();
+
+      showTyping();
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: conversationHistory }),
+        });
+
+        hideTyping();
+
+        if (!response.ok) {
+          addMessage("haven", "I apologize — I'm experiencing a temporary issue. Please try your question again in a moment.");
+          isStreaming = false;
+          sendBtn.disabled = false;
+          return;
+        }
+
+        // Create haven message bubble for streaming
+        const bubble = addMessage("haven", "");
+        let fullText = "";
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6);
+              if (data === "[DONE]") break;
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.text) {
+                  fullText += parsed.text;
+                  bubble.innerHTML = renderMarkdown(fullText);
+                  chat.scrollTop = chat.scrollHeight;
+                }
+                if (parsed.error) {
+                  fullText += "\n\n*" + parsed.error + "*";
+                  bubble.innerHTML = renderMarkdown(fullText);
+                }
+              } catch (e) {
+                // Skip unparseable chunks
+              }
+            }
+          }
+        }
+
+        conversationHistory.push({ role: "assistant", content: fullText });
+
+        // Limit conversation history to prevent token overflow
+        let totalChars = conversationHistory.reduce((sum, m) => sum + m.content.length, 0);
+        while (totalChars > 300000 && conversationHistory.length > 2) {
+          totalChars -= conversationHistory[0].content.length;
+          conversationHistory.shift();
+        }
+
+      } catch (err) {
+        hideTyping();
+        addMessage("haven", "I apologize — I'm unable to connect right now. Please check your internet connection and try again.");
+        console.error(err);
+      }
+
+      isStreaming = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+
+    function askSuggested(el) {
+      input.value = el.textContent;
+      sendMessage();
+    }
+
+    // Welcome message on load
+    window.addEventListener("DOMContentLoaded", () => {
+      showWelcome();
+      input.focus();
+    });
+  </script>
+</body>
+</html>
